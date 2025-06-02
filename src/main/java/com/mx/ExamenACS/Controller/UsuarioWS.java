@@ -1,5 +1,8 @@
 package com.mx.ExamenACS.Controller;
 
+import java.time.LocalDate;
+import java.time.Period;
+import java.time.ZoneId;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,9 +41,22 @@ public class UsuarioWS {
 		@PostMapping("/guardar")
 		public ResponseEntity<?> guardar(@RequestBody Usuario u){
 			Usuario nuevo = service.buscar(u);
+			
 			if(nuevo == null) {
-				service.guardar(u);
-				return ResponseEntity.status(HttpStatus.CREATED).body("{\"mensaje\":\"Se ha creado el pedido " + u.getId() + " correctamente\"}");
+				LocalDate hoy = LocalDate.now();
+				LocalDate nacimiento = LocalDate.ofInstant(u.getFechaNacimiento().toInstant(), ZoneId.systemDefault());
+				Period edad = Period.between(nacimiento, hoy);
+				if(edad.getYears() >= 18) {
+					if(validarLetras(u.getNombre()) && validarLetras(u.getApp()) && validarLetras(u.getApm())) {
+						service.guardar(u);
+						return ResponseEntity.status(HttpStatus.CREATED).body("{\"mensaje\":\"Se ha creado el Usuario " + u.getId() + " correctamente\"}");
+					} else {
+						return ResponseEntity.status(HttpStatus.CONFLICT).body("{\"mensaje\":\"El NOMBRE y los APELLIDOS deben contener solo letras sin acentos\"}"); 
+					}
+				} else {
+					return ResponseEntity.status(HttpStatus.CONFLICT).body("{\"mensaje\":\"El usuario debe ser mayor a 18 años\"}"); 
+				}
+				
 			}
 			return ResponseEntity.status(HttpStatus.CONFLICT).body("{\"mensaje\":\"El ID " + u.getId() + " ya existe. intenta con un valor nuevo\"}"); 
 		}
@@ -53,8 +69,19 @@ public class UsuarioWS {
 			if(existe == null) {
 				return ResponseEntity.notFound().build();
 			} else {
-				service.editar(u);
-				return ResponseEntity.status(HttpStatus.OK).body("{\"mensaje\":\"Se ha actualizado el Usuario " +u.getId()+"\"}");
+				LocalDate hoy = LocalDate.now();
+				LocalDate nacimiento = LocalDate.ofInstant(u.getFechaNacimiento().toInstant(), ZoneId.systemDefault());
+				Period edad = Period.between(nacimiento, hoy);
+				if(edad.getYears() >= 18) {
+					if(validarLetras(u.getNombre()) && validarLetras(u.getApp()) && validarLetras(u.getApm())) {
+						service.guardar(u);
+						return ResponseEntity.status(HttpStatus.CREATED).body("{\"mensaje\":\"Se ha creado el Usuario " + u.getId() + " correctamente\"}");
+					} else {
+						return ResponseEntity.status(HttpStatus.CONFLICT).body("{\"mensaje\":\"El NOMBRE y los APELLIDOS deben contener solo letras sin acentos\"}"); 
+					}
+				} else {
+					return ResponseEntity.status(HttpStatus.CONFLICT).body("{\"mensaje\":\"El usuario debe ser mayor a 18 años\"}"); 
+				}
 			}
 		}
 		
@@ -75,6 +102,10 @@ public class UsuarioWS {
 				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"No existe el usuario " + u.getId()+"\"}");
 			}
 			return ResponseEntity.ok(encontrado);
+		}
+		
+		public static boolean validarLetras(String texto) {
+		    return texto.matches("^[a-zA-Z ]+$");
 		}
 		
 
