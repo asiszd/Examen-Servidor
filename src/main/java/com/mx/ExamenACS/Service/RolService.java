@@ -3,6 +3,7 @@ package com.mx.ExamenACS.Service;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.mx.ExamenACS.Dao.IRolDao;
@@ -21,7 +22,7 @@ public class RolService implements IRolService{
 
 	@Override
 	public List<Rol> mostrar() {
-		return dao.findAll();
+		return dao.findAll(Sort.by(Sort.Direction.ASC, "id"));
 	}
 
 	@Override
@@ -40,5 +41,20 @@ public class RolService implements IRolService{
 	public Rol buscar(Rol r) {
 		return dao.findById(r.getId()).orElse(null);
 	}
+	
+	public boolean verificaPrivilegio(Rol r) {
+		Rol aux = dao.findByPrivilegioIgnoreCase(r.getPrivilegio());
+		if (aux == null) {
+			return false;
+		}
+		return true;
+	}
 
+	public boolean verificaUsuarios(Rol r){
+		List<Rol> listAux = dao.verificarUsuarios(r.getId());
+		if (listAux.isEmpty()) {
+			return false;
+		}
+		return true;
+	}
 }

@@ -38,11 +38,14 @@ public class RolWS {
 		@PostMapping("/guardar")
 		public ResponseEntity<?> guardar(@RequestBody Rol r){
 			Rol nuevo = service.buscar(r);
+			if (service.verificaPrivilegio(r)) {
+				return ResponseEntity.status(HttpStatus.CONFLICT).body("{\"mensaje\":\"El Rol " + r.getPrivilegio() + " ya existe. intenta con un valor nuevo\"}"); 
+			}
 			if(nuevo == null) {
 				service.guardar(r);
 				return ResponseEntity.status(HttpStatus.CREATED).body("{\"mensaje\":\"Se ha creado el Rol " + r.getPrivilegio() + " correctamente\"}");
 			}
-			return ResponseEntity.status(HttpStatus.CONFLICT).body("{\"mensaje\":\"El Rol " + r.getPrivilegio() + " ya existe. intenta con un valor nuevo\"}"); 
+			return ResponseEntity.status(HttpStatus.CONFLICT).body("{\"mensaje\":\"El Rol con ID" + r.getId() + " ya existe. intenta con un valor nuevo\"}"); 
 		}
 		
 		
@@ -50,6 +53,9 @@ public class RolWS {
 		@PutMapping("/editar")
 		public ResponseEntity<?> editar(@RequestBody Rol r){
 			Rol existe = service.buscar(r);
+			if (service.verificaPrivilegio(r)) {
+				return ResponseEntity.status(HttpStatus.CONFLICT).body("{\"mensaje\":\"El Rol " + r.getPrivilegio() + " ya existe. intenta con un valor nuevo\"}"); 
+			}
 			if(existe == null) {
 				return ResponseEntity.notFound().build();
 			} else {
@@ -62,6 +68,9 @@ public class RolWS {
 		//ELIMINAR
 		@DeleteMapping("/eliminar")
 		public ResponseEntity<?> eliminar(@RequestBody Rol r){
+			if(service.verificaUsuarios(r)) {
+				return ResponseEntity.status(HttpStatus.CONFLICT).body("{\"mensaje\":\"El rol está asignado a uno o mas usuarios, por lo cual no puede ser eliminado\"}"); 
+			}
 			service.eliminar(r);
 			return ResponseEntity.noContent().build();
 		}

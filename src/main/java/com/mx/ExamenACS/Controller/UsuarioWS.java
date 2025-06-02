@@ -42,12 +42,14 @@ public class UsuarioWS {
 		public ResponseEntity<?> guardar(@RequestBody Usuario u){
 			Usuario nuevo = service.buscar(u);
 			
+			if (service.buscarNombreCompleto(u)) {
+				return ResponseEntity.status(HttpStatus.CONFLICT).body("{\"mensaje\":\"Ya existe un usuario registrado con el mismo nombre y apellidos\"}"); 
+			}
 			if(nuevo == null) {
-				LocalDate hoy = LocalDate.now();
-				LocalDate nacimiento = LocalDate.ofInstant(u.getFechaNacimiento().toInstant(), ZoneId.systemDefault());
-				Period edad = Period.between(nacimiento, hoy);
-				if(edad.getYears() >= 18) {
-					if(validarLetras(u.getNombre()) && validarLetras(u.getApp()) && validarLetras(u.getApm())) {
+				
+				if(service.calculaEdad(u)>= 18) {
+					if(service.validarLetras(u.getNombre()) && service.validarLetras(u.getApp()) && service.validarLetras(u.getApm())) {
+						u.setCorreo(service.generaCorreo(u));
 						service.guardar(u);
 						return ResponseEntity.status(HttpStatus.CREATED).body("{\"mensaje\":\"Se ha creado el Usuario " + u.getId() + " correctamente\"}");
 					} else {
@@ -66,14 +68,12 @@ public class UsuarioWS {
 		@PutMapping("/editar")
 		public ResponseEntity<?> editar(@RequestBody Usuario u){
 			Usuario existe = service.buscar(u);
+			
 			if(existe == null) {
 				return ResponseEntity.notFound().build();
 			} else {
-				LocalDate hoy = LocalDate.now();
-				LocalDate nacimiento = LocalDate.ofInstant(u.getFechaNacimiento().toInstant(), ZoneId.systemDefault());
-				Period edad = Period.between(nacimiento, hoy);
-				if(edad.getYears() >= 18) {
-					if(validarLetras(u.getNombre()) && validarLetras(u.getApp()) && validarLetras(u.getApm())) {
+				if(service.calculaEdad(u) >= 18) {
+					if(service.validarLetras(u.getNombre()) && service.validarLetras(u.getApp()) && service.validarLetras(u.getApm())) {
 						service.guardar(u);
 						return ResponseEntity.status(HttpStatus.CREATED).body("{\"mensaje\":\"Se ha creado el Usuario " + u.getId() + " correctamente\"}");
 					} else {
@@ -102,10 +102,6 @@ public class UsuarioWS {
 				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"No existe el usuario " + u.getId()+"\"}");
 			}
 			return ResponseEntity.ok(encontrado);
-		}
-		
-		public static boolean validarLetras(String texto) {
-		    return texto.matches("^[a-zA-Z ]+$");
 		}
 		
 
